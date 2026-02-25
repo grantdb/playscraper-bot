@@ -37,15 +37,16 @@ async function processAppUrl(context: any, postId: string) {
 I need the details for the app with the package ID: ${appId}
 
 Please return ONLY a raw JSON object with no markdown formatting or backticks. The JSON object must have exactly these keys:
-- "title": The name of the app
-- "developer": The developer of the app
+- "found": A boolean true or false indicating if you could find information about this app.
+- "title": The name of the app (if found)
+- "developer": The developer of the app (if found)
 - "rating": The star rating out of 5 (e.g., "4.5", or "Unrated")
 - "downloads": The approximate number of downloads (e.g., "50M+", or "Unknown")
 - "updated": The date it was last updated (e.g., "Oct 12, 2023", or "Unknown")
 - "ageRating": The content rating (e.g., "Everyone", "Teen")
 - "description": A very brief, 1-2 sentence description of what the app does. Do not exceed 250 characters.
 
-If you literally cannot find the app, return a JSON object with those keys populated with "Unknown" and a description stating the app could not be found.`;
+If you cannot find the app via search or your memory, simply return {"found": false}.`;
 
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
@@ -54,6 +55,11 @@ If you literally cannot find the app, return a JSON object with those keys popul
       },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
+        tools: [
+          {
+            googleSearch: {}
+          }
+        ],
         generationConfig: {
           temperature: 0.1,
         }
@@ -76,6 +82,12 @@ If you literally cannot find the app, return a JSON object with those keys popul
       appData = JSON.parse(clenedText);
     } catch (parseError) {
       throw new Error(`Failed to parse Gemini response as JSON: ${aiResponseText}`);
+    }
+
+    // Check if the app was actually found
+    if (appData.found === false) {
+      console.log(`App ID ${appId} could not be found by Gemini. Skipping comment.`);
+      return;
     }
 
     const title = appData.title || appId;
