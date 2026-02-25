@@ -1,4 +1,5 @@
 import { Devvit, SettingScope } from '@devvit/public-api';
+import * as cheerio from 'cheerio';
 
 Devvit.configure({
   redditAPI: true,
@@ -86,8 +87,28 @@ If you cannot find the app via search or your memory, simply return {"found": fa
 
     // Check if the app was actually found
     if (appData.found === false) {
-      console.log(`App ID ${appId} could not be found by Gemini. Skipping comment.`);
-      return;
+      console.log(`App ID ${appId} could not be found by Gemini. Attempting direct HTML scrape fallback...`);
+
+      const playStoreURL = `https://play.google.com/store/apps/details?id=${appId}&hl=en_US&gl=US`;
+      const htmlResponse = await fetch(playStoreURL);
+
+      if (!htmlResponse.ok) {
+        console.log(`Fallback failed. App ${appId} does not exist on Play Store (HTTP ${htmlResponse.status}). Skipping comment.`);
+        return;
+      }
+
+      const htmlText = await htmlResponse.text();
+      const $ = cheerio.load(htmlText);
+
+      appData.title = $('h1').first().text().trim() || appId;
+      appData.developer = $('div:contains("Offered By"), a[href*="/store/apps/dev"]').first().text().trim() || $('a.VtfRFb').first().text().trim() || "Unknown Developer";
+      appData.description = $('div[data-g-id="description"]').first().text().trim().substring(0, 250) + '...' || "No description available.";
+      appData.rating = "Unrated";
+      appData.downloads = "Unknown";
+      appData.updated = "Unknown";
+      appData.ageRating = "Unknown";
+
+      console.log(`Fallback successful! Extracted basic details for ${appData.title}.`);
     }
 
     const title = appData.title || appId;
