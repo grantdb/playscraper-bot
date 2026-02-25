@@ -19,7 +19,8 @@ Devvit.addSettings([
 async function processAppUrl(context: any, postId: string) {
   const post = await context.reddit.getPostById(postId);
   const contentToSearch = `${post.url ?? ''} ${post.body ?? ''}`;
-  const playStoreRegex = /id=([a-zA-Z0-9._]+)/;
+  // Matches both ?id=com.example.app and /testing/com.example.app
+  const playStoreRegex = /(?:id=|testing\/)([a-zA-Z0-9._]+)/;
   const match = contentToSearch.match(playStoreRegex);
 
   if (!match) return;
