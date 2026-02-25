@@ -94,7 +94,23 @@ If you cannot find the app via search or your memory, simply return {"found": fa
       const htmlResponse = await fetch(playStoreURL);
 
       if (!htmlResponse.ok) {
-        console.log(`Fallback failed. App ${appId} does not exist on Play Store (HTTP ${htmlResponse.status}). Skipping comment.`);
+        console.log(`Fallback failed. App ${appId} returned HTTP ${htmlResponse.status}. Treating as Beta/Testing app.`);
+
+        let testingUrl = `https://play.google.com/apps/testing/${appId}`;
+
+        const betaCommentBody = `### **Early Access / Beta Testing App**\n\n` +
+          `It looks like this app is currently in **Early Access**, **Closed Testing**, or isn't publicly indexed on the Play Store yet.\n\n` +
+          `**Want to help test this app?**\n` +
+          `You may need to opt-in as a tester to download it. You can try the standard Play Store testing opt-in link below:\n\n` +
+          `👉 **[Sign up to test this app](${testingUrl})**\n\n` +
+          `*Note: App details such as developer, rating, and downloads cannot be verified for unpublished testing apps.*`;
+
+        const betaComment = await context.reddit.submitComment({
+          id: post.id,
+          text: betaCommentBody,
+        });
+        await betaComment.distinguish(true);
+        console.log(`SUCCESS: Posted beta/testing fallback comment for ${appId}.`);
         return;
       }
 
