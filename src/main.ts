@@ -312,13 +312,27 @@ If you cannot visit or find the page at all, return {"found": false}.`;
       return false;
     }
 
-    const commentBody = `### **${title}**\n\n` +
-      `* **Developer:** ${developer}\n` +
-      `* **Rating:** ${rating}\n` +
-      `* **Downloads:** ${downloads}\n` +
-      `* **Updated:** ${updatedOn}\n` +
-      `* **Content Rating:** ${ageRating}\n\n` +
-      `**Description:**\n> ${description}\n\n` +
+    // Build the comment body dynamically, omitting "Unknown" or "Unrated" fields
+    let commentLines = [`### **${title}**\n`];
+
+    if (developer !== "Unknown Developer") {
+      commentLines.push(`* **Developer:** ${developer}`);
+    }
+    if (rating !== "Unrated") {
+      commentLines.push(`* **Rating:** ${rating}`);
+    }
+    if (downloads !== "Unknown") {
+      commentLines.push(`* **Downloads:** ${downloads}`);
+    }
+    if (updatedOn !== "Unknown") {
+      commentLines.push(`* **Updated:** ${updatedOn}`);
+    }
+    if (ageRating !== "Unknown") {
+      commentLines.push(`* **Content Rating:** ${ageRating}`);
+    }
+
+    const commentBody = commentLines.join('\n') +
+      `\n\n**Description:**\n> ${description}\n\n` +
       `[📲 View on Google Play](${playStoreLink})`;
 
     const comment = await context.reddit.submitComment({
