@@ -18,9 +18,10 @@ Devvit.addSettings([
 
 async function processAppUrl(context: any, postId: string): Promise<boolean> {
   const post = await context.reddit.getPostById(postId);
-  let contentToSearch = `${post.url ?? ''} ${post.body ?? ''}`;
+  // 1. Strip Markdown backslashes (Reddit escapes underscores as \_ which breaks regex)
+  // 2. Decode content to handle encoded underscores (%5F) and other entities
+  let contentToSearch = `${post.url ?? ''} ${post.body ?? ''}`.replace(/\\/g, '');
   try {
-    // Decode content to handle encoded underscores (%5F) and other entities
     contentToSearch = decodeURIComponent(contentToSearch);
   } catch (e) {
     // Fallback if decoding fails (e.g. malformed sequence)
