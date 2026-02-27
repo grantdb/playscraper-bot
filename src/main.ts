@@ -196,7 +196,7 @@ If you cannot visit or find the page at all, return {"found": false}.`;
             `👉 **[Sign up to test this app](${testingUrl})**\n\n` +
             `*Note: App details such as developer, rating, and downloads cannot be verified for unpublished testing apps.*\n\n` +
             `---\n\n` +
-            `*I am a bot. If you find an error, please contact the moderators of this subreddit.*`;
+            `*I am a bot. If you find an error, please [contact the moderators](https://www.reddit.com/message/compose?to=/r/${post.subredditName}) of this subreddit.*`;
           const betaComment = await context.reddit.submitComment({ id: post.id, text: betaCommentBody });
           await betaComment.distinguish(true);
           console.log(`SUCCESS: Posted beta/testing fallback comment for ${appId}.`);
@@ -350,7 +350,7 @@ If you cannot visit or find the page at all, return {"found": false}.`;
       `\n\n**Description:**\n> ${description}\n\n` +
       `[📲 View on Google Play](${playStoreLink})\n\n` +
       `---\n\n` +
-      `*I am a bot. If you find an error, please contact the moderators of this subreddit.*`;
+      `*I am a bot. If you find an error, please [contact the moderators](https://www.reddit.com/message/compose?to=/r/${post.subredditName}) of this subreddit.*`;
 
     const comment = await context.reddit.submitComment({
       id: post.id,
