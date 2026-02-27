@@ -206,6 +206,17 @@ If you cannot find the app via search or your memory, simply return {"found": fa
     const ageRating = appData.ageRating || "Unknown";
     const description = appData.description || "No description available.";
 
+    // If everything is still Unknown/default after both Gemini and Fallback, don't post a useless comment
+    if (
+      (developer === "Unknown Developer" || developer === "Unknown") &&
+      (downloads === "Unknown") &&
+      (rating === "Unrated") &&
+      (ageRating === "Unknown")
+    ) {
+      console.log(`Aborting post for ${appId}. No meaningful data was found by Gemini or Fallback scraper.`);
+      return false;
+    }
+
     const commentBody = `### **${title}**\n\n` +
       `* **Developer:** ${developer}\n` +
       `* **Rating:** ${rating}\n` +
