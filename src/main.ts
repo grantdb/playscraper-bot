@@ -163,6 +163,23 @@ If you cannot find the app via search or your memory, simply return {"found": fa
         let downloads = "Unknown";
         let ageRating = "Unknown";
 
+        // Regex parsing of embedded JSON data for fields that load dynamically
+        const downloadsMatch = htmlText.match(/"([\d,]+\+)"/);
+        if (downloadsMatch && downloadsMatch[1].length < 15) {
+          downloads = downloadsMatch[1];
+        }
+
+        const ageMatch = htmlText.match(/"(Everyone|Teen|Mature 17\+|Everyone 10\+)"/);
+        if (ageMatch) {
+          ageRating = ageMatch[1];
+        }
+
+        const updatedMatch = htmlText.match(/"([A-Z][a-z]{2} \d{1,2}, \d{4})"/);
+        let updatedDate = "Unknown";
+        if (updatedMatch) {
+          updatedDate = updatedMatch[1];
+        }
+
         const wVqUob: string[] = [];
         $('div.wVqUob').each((i, el) => { wVqUob.push($(el).text().trim()); });
 
@@ -179,13 +196,17 @@ If you cannot find the app via search or your memory, simply return {"found": fa
 
         if (rating === "Unrated") {
           const altRating = $('div[itemprop="starRating"] > div.TT9eO').text() || $('div:contains("star")').first().text().match(/([\d.]+)star/)?.[1];
+          // Try JSON extraction as absolute last resort
+          const jsonRatingMatch = htmlText.match(/\[null,null,"([0-5]\.[0-9])"\]/);
           if (altRating) rating = altRating;
+          else if (jsonRatingMatch) rating = jsonRatingMatch[1];
         }
 
-        const updatedDateText = $('div:contains("Updated on")').last().next().text() || $('div.xg1aie').text();
-        let updatedDate = "Unknown";
-        if (updatedDateText && updatedDateText.length > 5 && updatedDateText.length < 25) {
-          updatedDate = updatedDateText;
+        if (updatedDate === "Unknown") {
+          const updatedDateText = $('div:contains("Updated on")').last().next().text() || $('div.xg1aie').text();
+          if (updatedDateText && updatedDateText.length > 5 && updatedDateText.length < 25) {
+            updatedDate = updatedDateText;
+          }
         }
 
         // Only overwrite if missing or Unknown
