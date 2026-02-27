@@ -19,8 +19,17 @@ Devvit.addSettings([
 async function processAppUrl(context: any, postId: string): Promise<boolean> {
   const post = await context.reddit.getPostById(postId);
   let contentToSearch = `${post.url ?? ''} ${post.body ?? ''}`;
+  try {
+    // Decode content to handle encoded underscores (%5F) and other entities
+    contentToSearch = decodeURIComponent(contentToSearch);
+  } catch (e) {
+    // Fallback if decoding fails (e.g. malformed sequence)
+    console.log(`URL decoding failed for post ${postId}, using raw content.`);
+  }
 
-  const playStoreRegex = /(?:id=|testing\/)([a-zA-Z0-9._]+)/;
+  // Refined regex: matches package ID segments (alphanumeric/underscore) separated by dots.
+  // Package names must have at least two segments (e.g., com.example).
+  const playStoreRegex = /(?:id=|testing\/)([a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)+)/;
   let match = contentToSearch.match(playStoreRegex);
 
   // Fallback: If no link found in body/url (common with Image/Gallery posts), scan the author's comments
