@@ -69,7 +69,7 @@ async function processAppUrl(context: any, postId: string): Promise<{ success: b
 Please visit this exact URL and read the page to get the app details:
 ${playStoreLink}
 
-Use your Google Search tool to search for and visit: "${playStoreLink}"
+Use your Google Search tool to search for: "Android App Google Play Store package id: ${appId}" AND "${playStoreLink}"
 
 From the page, I need:
 - The EXACT app title as it appears on the Play Store page (not guessed from the package name)
@@ -94,7 +94,7 @@ Return ONLY a raw JSON object with no markdown or backticks:
 
 If you cannot visit or find the page at all, return {"found": false}.`;
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -360,14 +360,26 @@ If you cannot visit or find the page at all, return {"found": false}.`;
   }
 }
 
-// Removed scheduler job process_post_delayed
+Devvit.addSchedulerJob({
+  name: 'process_post_delayed',
+  onRun: async (event, context) => {
+    if (event.data?.postId) {
+      console.log(`Scheduled job running for post ${event.data.postId}`);
+      await processAppUrl(context, event.data.postId as string);
+    }
+  },
+});
 
 Devvit.addTrigger({
   event: 'PostSubmit',
   onEvent: async (event, context) => {
     if (event.post?.id) {
-      console.log(`New post ${event.post.id} detected. Processing immediately...`);
-      await processAppUrl(context, event.post.id);
+      console.log(`New post ${event.post.id} detected. Scheduling scraper with 1-minute delay...`);
+      await context.scheduler.runJob({
+        name: 'process_post_delayed',
+        data: { postId: event.post.id },
+        runAt: new Date(Date.now() + 60000), // 1 minute delay
+      });
     }
   },
 });

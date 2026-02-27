@@ -7,7 +7,7 @@ This bot uses the [Google Gemini API](https://aistudio.google.com/) to process P
 ## Features
 
 - **Automated App Summaries:** Listens for `PostSubmit` events in the subreddit. If a post contains a Play Store URL (e.g., `id=com.example.app`), the bot automatically fetches and summarizes its data.
-- **Smart Delay (Wait Time):** New posts have a 1-minute built-in delay using Devvit's `Scheduler` API. This allows Reddit's built-in spam filters and AutoModerator to act first. If a post is removed or marked as spam during this window, the bot silently ignores it.
+- **Smart Delay (Wait Time):** New posts have a **1-minute built-in delay** using Devvit's `Scheduler` API. This allows Reddit's built-in spam filters and AutoModerator to act first. If a post is removed or marked as spam during this window, the bot silently ignores it.
 - **Manual Post Approvals:** Includes a `ModAction` trigger that listens for `approvelink` events. If a moderator manually approves a post from the queue, the bot kicks in immediately to leave the comment.
 - **Clean Markdown Output:** Generates a professional, bulleted list without emojis or excessive formatting.
 - **Secure Configuration:** The Gemini API key is securely stored per-subreddit using `SettingScope.Installation`, meaning no hardcoded keys, and easy setup via the Reddit web UI.

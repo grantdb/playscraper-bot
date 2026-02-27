@@ -1,12 +1,12 @@
 # Terms of Service for playscraper-bot
 
-Last updated: February 24, 2026
+Last updated: February 27, 2026
 
 ## 1. Acceptance of Terms
 By installing or using the `playscraper-bot` Devvit application on Reddit, you agree to be bound by these Terms of Service. If you do not agree, please uninstall the application from your subreddit.
 
 ## 2. Description of Service
-`playscraper-bot` is a community utility that automatically scans new submissions for Google Play Store app links and automatically replies with a stickied comment summarizing the app's details directly scraped from the official Play Store.
+`playscraper-bot` is a community utility that automatically scans new submissions for Google Play Store app links and automatically replies with a stickied comment summarizing the app's details. App data is retrieved via **Google Gemini AI** and/or directly from the official Play Store.
 
 ## 3. Usage Restrictions
 You agree not to use the bot:
