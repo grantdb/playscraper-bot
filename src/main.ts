@@ -94,8 +94,11 @@ If you cannot find the app via search or your memory, simply return {"found": fa
 
     const data = await response.json();
 
-    // Parse the AI's response text (which should be just JSON)
-    const aiResponseText = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+    // When googleSearch tool is active, Gemini returns multiple parts —
+    // the first part is the search tool call (no .text), the actual JSON is in a later part.
+    // So we must scan all parts to find the one with text content.
+    const parts: any[] = data.candidates?.[0]?.content?.parts ?? [];
+    const aiResponseText = parts.map((p: any) => p.text ?? '').find((t: string) => t.trim().length > 0) || '{}';
     let appData;
 
     try {
