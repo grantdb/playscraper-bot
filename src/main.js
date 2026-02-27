@@ -15,12 +15,28 @@ Devvit.addSettings([
 ]);
 async function processAppUrl(context, postId) {
     const post = await context.reddit.getPostById(postId);
-    const contentToSearch = `${post.url ?? ''} ${post.body ?? ''}`;
-    // Matches both ?id=com.example.app and /testing/com.example.app
+    let contentToSearch = `${post.url ?? ''} ${post.body ?? ''}`;
     const playStoreRegex = /(?:id=|testing\/)([a-zA-Z0-9._]+)/;
-    const match = contentToSearch.match(playStoreRegex);
-    if (!match)
+    let match = contentToSearch.match(playStoreRegex);
+    // Fallback: If no link found in body/url (common with Image/Gallery posts), scan the author's comments
+    if (!match) {
+        try {
+            const comments = await post.comments.all();
+            for (const comment of comments) {
+                if (comment.authorId === post.authorId) {
+                    contentToSearch += ` ${comment.body}`;
+                }
+            }
+            match = contentToSearch.match(playStoreRegex);
+        }
+        catch (e) {
+            console.log(`Failed to fetch comments for fallback scan: ${e}`);
+        }
+    }
+    if (!match) {
+        console.log(`No Play Store ID found for post ${postId} after scanning body and OP comments.`);
         return;
+    }
     const appId = match[1];
     try {
         console.log(`NEW PROJECT: Fetching details for ${appId} using Gemini...`);
@@ -74,24 +90,77 @@ If you cannot find the app via search or your memory, simply return {"found": fa
         catch (parseError) {
             throw new Error(`Failed to parse Gemini response as JSON: ${aiResponseText}`);
         }
-        // Check if the app was actually found
-        if (appData.found === false) {
-            console.log(`App ID ${appId} could not be found by Gemini. Attempting direct HTML scrape fallback...`);
+        // Check if the app was actually found, OR if essential data is missing ("Unknown")
+        if (appData.found === false || appData.developer === "Unknown" || appData.downloads === "Unknown") {
+            console.log(`App ID ${appId} could not be found by Gemini (or returned Unknown data). Attempting direct HTML scrape fallback...`);
             const playStoreURL = `https://play.google.com/store/apps/details?id=${appId}&hl=en_US&gl=US`;
             const htmlResponse = await fetch(playStoreURL);
             if (!htmlResponse.ok) {
-                console.log(`Fallback failed. App ${appId} does not exist on Play Store (HTTP ${htmlResponse.status}). Skipping comment.`);
+                console.log(`Fallback failed. App ${appId} returned HTTP ${htmlResponse.status}. Treating as Beta/Testing app.`);
+                let testingUrl = `https://play.google.com/apps/testing/${appId}`;
+                const betaCommentBody = `### **Early Access / Beta Testing App**\n\n` +
+                    `It looks like this app is currently in **Early Access**, **Closed Testing**, or isn't publicly indexed on the Play Store yet.\n\n` +
+                    `**Want to help test this app?**\n` +
+                    `You may need to opt-in as a tester to download it. You can try the standard Play Store testing opt-in link below:\n\n` +
+                    `👉 **[Sign up to test this app](${testingUrl})**\n\n` +
+                    `*Note: App details such as developer, rating, and downloads cannot be verified for unpublished testing apps.*`;
+                const betaComment = await context.reddit.submitComment({
+                    id: post.id,
+                    text: betaCommentBody,
+                });
+                await betaComment.distinguish(true);
+                console.log(`SUCCESS: Posted beta/testing fallback comment for ${appId}.`);
                 return;
             }
             const htmlText = await htmlResponse.text();
             const $ = cheerio.load(htmlText);
-            appData.title = $('h1').first().text().trim() || appId;
-            appData.developer = $('div:contains("Offered By"), a[href*="/store/apps/dev"]').first().text().trim() || $('a.VtfRFb').first().text().trim() || "Unknown Developer";
-            appData.description = $('div[data-g-id="description"]').first().text().trim().substring(0, 250) + '...' || "No description available.";
-            appData.rating = "Unrated";
-            appData.downloads = "Unknown";
-            appData.updated = "Unknown";
-            appData.ageRating = "Unknown";
+            // Only overwrite if currently missing or "Unknown"
+            if (!appData.title || appData.title === appId) {
+                appData.title = $('h1').first().text().trim() || appId;
+            }
+            if (!appData.developer || appData.developer === "Unknown" || appData.developer === "Unknown Developer") {
+                appData.developer = $('div:contains("Offered By"), a[href*="/store/apps/dev"]').first().text().trim() || $('a.VtfRFb').first().text().trim() || "Unknown Developer";
+            }
+            if (!appData.description || appData.description.includes("No description available")) {
+                appData.description = $('div[data-g-id="description"]').first().text().trim().substring(0, 250) + '...' || "No description available.";
+            }
+            let rating = "Unrated";
+            let downloads = "Unknown";
+            let ageRating = "Unknown";
+            const wVqUob = [];
+            $('div.wVqUob').each((i, el) => { wVqUob.push($(el).text().trim()); });
+            for (const text of wVqUob) {
+                if (text.includes('star')) {
+                    const match = text.match(/([\d.]+)star/);
+                    if (match)
+                        rating = match[1];
+                }
+                else if (text.includes('Downloads')) {
+                    downloads = text.replace('Downloads', '').trim();
+                }
+                else if (text.includes('info')) {
+                    ageRating = text.replace('info', '').trim();
+                }
+            }
+            if (rating === "Unrated") {
+                const altRating = $('div[itemprop="starRating"] > div.TT9eO').text() || $('div:contains("star")').first().text().match(/([\d.]+)star/)?.[1];
+                if (altRating)
+                    rating = altRating;
+            }
+            const updatedDateText = $('div:contains("Updated on")').last().next().text() || $('div.xg1aie').text();
+            let updatedDate = "Unknown";
+            if (updatedDateText && updatedDateText.length > 5 && updatedDateText.length < 25) {
+                updatedDate = updatedDateText;
+            }
+            // Only overwrite if missing or Unknown
+            if (!appData.rating || appData.rating === "Unrated")
+                appData.rating = rating;
+            if (!appData.downloads || appData.downloads === "Unknown")
+                appData.downloads = downloads;
+            if (!appData.updated || appData.updated === "Unknown")
+                appData.updated = updatedDate;
+            if (!appData.ageRating || appData.ageRating === "Unknown")
+                appData.ageRating = ageRating;
             console.log(`Fallback successful! Extracted basic details for ${appData.title}.`);
         }
         const title = appData.title || appId;
@@ -160,5 +229,20 @@ Devvit.addTrigger({
             await processAppUrl(context, event.targetPost.id);
         }
     },
+});
+Devvit.addMenuItem({
+    location: 'post',
+    label: 'Trigger App Scraper',
+    description: 'Manually run the scraper bot on this post',
+    onPress: async (event, context) => {
+        if (event.targetId) {
+            console.log(`Manual trigger initiated for ${event.targetId}`);
+            await processAppUrl(context, event.targetId);
+            context.ui.showToast('App details scraper task has been triggered!');
+        }
+        else {
+            context.ui.showToast('No post ID found.');
+        }
+    }
 });
 export default Devvit;
