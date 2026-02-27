@@ -92,24 +92,24 @@ Your task is to find the official information for the app with package ID: "${ap
 USE YOUR SEARCH TOOL to find the current metadata for this app.
 Search query suggestions:
 1. 'site:play.google.com "${appId}"'
-2. 'site:play.google.com "${appId}" "downloads" "Everyone"'
+2. 'site:play.google.com "${appId}" downloads content rating'
 
 CRITICAL INSTRUCTIONS:
-- You MUST find the official Play Store title and developer.
-- Look specifically for "10+ downloads", "50+ downloads", etc. in snippets and return EXACTLY that.
-- Look for Content Rating like "Everyone", "Teen", or "PEGI 3".
-- If you find any evidence of the app, return "found": true.
+- You MUST find the official Play Store title and developer for "${appId}".
+- Look specifically for "10+ downloads", "50+ downloads", etc. in search result snippets and return exactly that.
+- Look for Content Rating labels like "Everyone", "Teen", or "PEGI 3".
+- If you find ANY evidence of the app matching this ID, return "found": true.
 
-Return ONLY a raw JSON object (no markdown):
+Return a raw JSON object:
 {
   "found": true or false,
-  "title": "required",
-  "developer": "required",
-  "rating": "optional",
-  "downloads": "required (e.g. 10+, 50+)",
-  "updated": "optional",
-  "ageRating": "required (e.g. Everyone, Teen)",
-  "description": "required"
+  "title": "...",
+  "developer": "...",
+  "rating": "...",
+  "downloads": "...", (e.g. 10+, 50+, 1K+)
+  "updated": "...",
+  "ageRating": "...", (e.g. Everyone, Teen, PEGI 3)
+  "description": "..."
 }
 
 If you find NO evidence of any app with this package ID, return {"found": false}.`;
@@ -159,7 +159,7 @@ If you find NO evidence of any app with this package ID, return {"found": false}
         const jsonMatch = aiResponseText.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           const parsed = JSON.parse(jsonMatch[0]);
-          if (Object.keys(parsed).length > 2) { // Ensure it's not just {} or {found:true}
+          if (Object.keys(parsed).length > 0) {
             appData = { ...appData, ...parsed };
           }
         }

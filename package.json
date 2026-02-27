@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "playscraper-bot",
-  "version": "0.0.46",
+  "version": "0.0.47",
   "license": "BSD-3-Clause",
   "type": "module",
   "scripts": {
