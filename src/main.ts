@@ -132,12 +132,17 @@ If you absolutely cannot find any information about this app, return {"found": f
 
     console.log(`Gemini result - found: ${appData.found}, developer: ${appData.developer ?? 'none'}, downloads: ${appData.downloads ?? 'none'}`);
 
-    // Trigger HTML fallback only if Gemini found nothing at all OR is missing the developer name
+    // Trigger HTML fallback if:
+    // - Gemini found nothing OR is missing the developer (complete failure)
+    // - OR Gemini found the app but is still missing key stats (downloads, updated, ageRating)
     const geminiFoundNothing = appData.found === false;
     const geminiMissingDeveloper = !appData.developer || appData.developer === "Unknown";
+    const geminiMissingStats = !appData.downloads || appData.downloads === "Unknown" ||
+      !appData.updated || appData.updated === "Unknown" ||
+      !appData.ageRating || appData.ageRating === "Unknown";
 
-    if (geminiFoundNothing || geminiMissingDeveloper) {
-      console.log(`Attempting HTML fallback for ${appId} (geminiFoundNothing=${geminiFoundNothing}, missingDev=${geminiMissingDeveloper})...`);
+    if (geminiFoundNothing || geminiMissingDeveloper || geminiMissingStats) {
+      console.log(`Attempting HTML fallback for ${appId} (foundNothing=${geminiFoundNothing}, missingDev=${geminiMissingDeveloper}, missingStats=${geminiMissingStats})...`);
 
       const playStoreURL = `https://play.google.com/store/apps/details?id=${appId}&hl=en_US&gl=US`;
       let htmlResponse;
