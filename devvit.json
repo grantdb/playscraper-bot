@@ -1,5 +1,5 @@
 {
-    "name": "playscrapper-bot",
+    "name": "playscraper-bot",
     "blocks": {
         "entry": "src/main.ts",
         "triggers": [

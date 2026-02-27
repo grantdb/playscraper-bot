@@ -1,4 +1,4 @@
-# PlayScrapper Bot
+# PlayScraper Bot
 
 A Reddit bot built on the [Devvit](https://developers.reddit.com/) platform that automatically detects Google Play Store links in new posts and leaves a stickied, cleanly formatted comment summarizing the app's details (Title, Developer, Rating, Downloads, Age Rating, and Description). 
 
