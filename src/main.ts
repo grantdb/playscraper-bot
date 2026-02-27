@@ -239,37 +239,14 @@ If you cannot find the app via search or your memory, simply return {"found": fa
   }
 }
 
-Devvit.addSchedulerJob({
-  name: 'process_post_delayed',
-  onRun: async (event, context) => {
-    if (event.data && typeof event.data.postId === 'string') {
-      const postId = event.data.postId as string;
-      const post = await context.reddit.getPostById(postId);
-
-      // Check if the post was removed by Reddit's filters or AutoModerator
-      // during the delay window before we attempt to process it.
-      if (post.isRemoved() || post.isSpam()) {
-        console.log(`Post ${postId} was removed or marked as spam. Skipping Gemini processing.`);
-        return;
-      }
-
-      console.log(`Delay finished for post ${postId}. Ready to process...`);
-      await processAppUrl(context, postId);
-    }
-  },
-});
+// Removed scheduler job process_post_delayed
 
 Devvit.addTrigger({
   event: 'PostSubmit',
   onEvent: async (event, context) => {
     if (event.post?.id) {
-      console.log(`New post ${event.post.id} detected. Scheduling delayed check in 1 minute...`);
-      // Schedule the job to run 1 minute from now
-      await context.scheduler.runJob({
-        name: 'process_post_delayed',
-        data: { postId: event.post.id },
-        runAt: new Date(Date.now() + 60 * 1000), // + 1 minute
-      });
+      console.log(`New post ${event.post.id} detected. Processing immediately...`);
+      await processAppUrl(context, event.post.id);
     }
   },
 });
