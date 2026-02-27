@@ -170,16 +170,27 @@ If you cannot find the app via search or your memory, simply return {"found": fa
         const htmlText = await htmlResponse.text();
         const $ = cheerio.load(htmlText);
 
-        // Only overwrite if currently missing or "Unknown"
+        // Regex-based extraction works on raw HTML without JS rendering
+        const titleMatch = htmlText.match(/href="\/store\/apps\/dev\?id=[^"]+">([^<]+)<\/a>/);
+        const devFromRegex = titleMatch ? null : null; // keep below
+        const titleRegex = htmlText.match(/<title[^>]*>(.*?)<\/title>/i);
+        const rawTitle = (titleRegex?.[1] ?? appId).replace(' - Apps on Google Play', '').trim();
+
+        const devMatch = htmlText.match(/href="\/store\/apps\/dev\?id=[^"]+">([^<]+)<\/a>/);
+        const rawDev = devMatch?.[1]?.trim() ?? '';
+
         if (!appData.title || appData.title === appId) {
-          appData.title = $('h1').first().text().trim() || appId;
+          appData.title = rawTitle || $('h1').first().text().trim() || appId;
         }
         if (!appData.developer || appData.developer === "Unknown" || appData.developer === "Unknown Developer") {
-          appData.developer = $('div:contains("Offered By"), a[href*="/store/apps/dev"]').first().text().trim() || $('a.VtfRFb').first().text().trim() || "Unknown Developer";
+          appData.developer = rawDev || $('a.VtfRFb').first().text().trim() || "Unknown Developer";
         }
         if (!appData.description || appData.description.includes("No description available")) {
-          appData.description = $('div[data-g-id="description"]').first().text().trim().substring(0, 250) + '...' || "No description available.";
+          const descEl = $('div[data-g-id="description"]').first().text().trim();
+          if (descEl) appData.description = descEl.substring(0, 250) + '...';
         }
+
+        console.log(`HTML regex extracted - title: ${rawTitle}, dev: ${rawDev}`);
 
         let rating = "Unrated";
         let downloads = "Unknown";
