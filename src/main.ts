@@ -101,11 +101,11 @@ If you find an app that significantly matches the name or context of the request
 
 From your search results, you MUST extract:
 - The EXACT app title.
-- The Official Developer name (e.g., "adrisanchiner").
+- The Official Developer name (e.g., "GenZync by GPhoenix" or "adrisanchiner"). Look for "Offered by" or the developer link.
 - The star rating (if available, else "Unrated").
-- The exact download count if visible (e.g., "10+", "50+", "100+"). 
+- The exact download count strings if visible (e.g., "10+", "50+", "100+", "1K+"). 
 - The last updated date.
-- The maturity rating (e.g., "Everyone", "Teen", "PEGI 3", "Rated for 3+").
+- The maturity/content rating. Look VERY CAREFULLY for tags like "Everyone", "Teen", "Mature", "Everyone 10+", "PEGI 3", "Rated for 3+", "USK: 0". 
 - A brief 1-2 sentence description.
 
 Return ONLY a raw JSON object with no markdown or backticks:
