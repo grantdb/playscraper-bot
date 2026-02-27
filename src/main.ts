@@ -101,21 +101,21 @@ If the official Play Store page is not found (often due to geo-restrictions or r
 
 From your search results, you MUST extract:
 - The EXACT app title as it appears on the page.
-- The EXACT developer or publisher name. (Look carefully at the search results for the creator).
+- The EXACT developer or publisher name. (Look carefully at the search result's header or the string immediately following the app title. DO NOT return "Not specified" or "Unknown" if ANY name is visible).
 - The star rating (if available, else "Unrated").
-- The download count (e.g., 100+, 50M+, or "New Release"). You MUST provide an estimate.
+- The download count (e.g., 50+, 100+, 50M+, or "New Release"). You MUST provide the most specific number found in the snippets.
 - The last updated date.
-- The content rating (e.g., Everyone, Teen, PEGI 3).
-- A brief 1-2 sentence description including its primary purpose.
+- The content rating.
+- A brief 1-2 sentence description.
 
 Return ONLY a raw JSON object with no markdown or backticks:
 {
   "found": true or false,
   "title": "exact title",
-  "developer": "exact developer",
+  "developer": "exact developer name",
   "rating": "4.5 or Unrated",
-  "downloads": "e.g. 100+",
-  "updated": "e.g. Feb 22, 2026",
+  "downloads": "e.g. 50+",
+  "updated": "e.g. Feb 27, 2026",
   "ageRating": "e.g. Everyone",
   "description": "..."
 }
@@ -248,9 +248,9 @@ If you cannot verify the EXACT package ID "${appId}" exists, return {"found": fa
     }
 
     const title = appData.title || appId;
-    const developer = appData.developer || "Unknown Developer";
+    const developer = (appData.developer && !appData.developer.includes("Not specified") && !appData.developer.includes("Unknown")) ? appData.developer : "Unknown Developer";
     const rating = appData.rating || "Unrated";
-    const downloads = (appData.downloads && appData.downloads !== "Unknown") ? appData.downloads : (appData.found !== false ? "New Release" : "Unknown");
+    const downloads = (appData.downloads && !appData.downloads.includes("Not check") && !appData.downloads.includes("Not available")) ? appData.downloads : (appData.found !== false ? "New Release" : "Unknown");
     const updatedOn = appData.updated || "Unknown";
     const ageRating = appData.ageRating || "Unknown";
     const description = appData.description || "No description available.";
