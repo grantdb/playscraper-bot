@@ -87,28 +87,19 @@ async function processAppUrl(context: any, postId: string, force: boolean = fals
 
       const playStoreLink = `https://play.google.com/store/apps/details?id=${appId}`;
       const prompt = `You are a helpful assistant that retrieves details about Android apps from the Google Play Store.
+Your task is to find the official information for the app with package ID: "${appId}".
 
-Please search the web for the Android app exactly matching this package ID: "${appId}"
+USE YOUR SEARCH TOOL to find the current metadata for this app.
+Search query suggestion: 'site:play.google.com "${appId}" "downloads" "rated"'
 
-CRITICAL: You MUST verify that the search results refer to the EXACT package ID "${appId}". 
-DO NOT provide information for a different app even if the name is similar (e.g., if the user asks for "com.matedoro.app", do NOT return "Matadero Madrid" or "com.matadero.madrid"). 
-If you find multiple similar results, prioritize the one that matches the package ID exactly in the URL or snippet.
-
-IMPORTANT: Try to find the official Google Play Store page first. 
-Some apps are in "Early Access" or "Beta" but are still publicly visible with download counts (e.g., 10+, 50+, 100+ downloads). You MUST extract details for these apps.
-
-If you find an app that significantly matches the name or context of the request, return "found": true even if the package ID is not explicitly visible in the search snippet.
-
-From your search results, you MUST extract:
+CRITICAL extracted data:
 - The EXACT app title.
-- The Official Developer name (e.g., "GenZync by GPhoenix" or "adrisanchiner"). Look for "Offered by" or the developer link.
-- The star rating (if available, else "Unrated").
-- The exact download count strings if visible (e.g., "10+", "50+", "100+", "1K+"). 
-- The last updated date.
-- The maturity/content rating. Look VERY CAREFULLY for tags like "Everyone", "Teen", "Mature", "Everyone 10+", "PEGI 3", "Rated for 3+", "USK: 0". 
-- A brief 1-2 sentence description.
+- Official Developer name (look for "Offered by").
+- The exact download count (e.g., "10+", "50+", "100+"). DO NOT return "Not specified" or "Unknown" if a number is visible in ANY snippet.
+- The content maturity rating (e.g., "Everyone", "Teen", "Everyone 10+", "PEGI 3", "Rated for 3+"). Look for the letter 'E' icon or text like "Rated for".
+- Brief 1-2 sentence description.
 
-Return ONLY a raw JSON object with no markdown or backticks:
+Return ONLY a raw JSON object:
 {
   "found": true or false,
   "title": "...",
@@ -120,7 +111,7 @@ Return ONLY a raw JSON object with no markdown or backticks:
   "description": "..."
 }
 
-If you find NO evidence of any app resembling this name or ID, return {"found": false}.`;
+If you find NO evidence of any app with this package ID, return {"found": false}.`;
 
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
         method: 'POST',
@@ -249,9 +240,9 @@ If you find NO evidence of any app resembling this name or ID, return {"found": 
     const title = appData.title || appId;
     const developer = (appData.developer && !appData.developer.includes("Not specified") && !appData.developer.includes("Unknown")) ? appData.developer : "Unknown Developer";
     const rating = appData.rating || "Unrated";
-    const downloads = (appData.downloads && !appData.downloads.includes("Not check") && !appData.downloads.includes("Not available")) ? appData.downloads : (appData.found !== false ? "New Release" : "Unknown");
+    const downloads = (appData.downloads && !appData.downloads.toLowerCase().includes("not") && !appData.downloads.toLowerCase().includes("unknown")) ? appData.downloads : (appData.found !== false ? "New Release" : "Unknown");
     const updatedOn = appData.updated || "Unknown";
-    const ageRating = appData.ageRating || "Unknown";
+    const ageRating = (appData.ageRating && !appData.ageRating.toLowerCase().includes("not") && !appData.ageRating.toLowerCase().includes("unknown")) ? appData.ageRating : "Unrated";
     const description = appData.description || "No description available.";
 
     if ((title === appId || !appData.title) && (developer === "Unknown Developer" || !appData.developer)) {
