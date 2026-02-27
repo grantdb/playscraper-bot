@@ -1,6 +1,11 @@
 // Test Gemini call against an ESTABLISHED app to verify the bot would work for typical posts
 // Run: node test_gemini_established.mjs
-const apiKey = 'AIzaSyCs7RWnpJOMM0A5eC4KVbvlqNvslR0C3Vo'; // NOTE: regenerate this key!
+const apiKey = process.env.GEMINI_API_KEY; // Use environment variable instead of hardcoding
+if (!apiKey) {
+  console.error("Please set GEMINI_API_KEY environment variable.");
+  process.exit(1);
+}
+
 const appId = 'com.spotify.music'; // Spotify - well-known, Gemini definitely knows it
 const playStoreLink = `https://play.google.com/store/apps/details?id=${appId}`;
 
@@ -35,12 +40,12 @@ Return ONLY a raw JSON object with no markdown or backticks:
 If you cannot visit or find the page at all, return {"found": false}.`;
 
 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        tools: [{ googleSearch: {} }]
-    })
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    contents: [{ parts: [{ text: prompt }] }],
+    tools: [{ googleSearch: {} }]
+  })
 });
 
 const data = await response.json();

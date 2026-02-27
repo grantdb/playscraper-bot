@@ -12,7 +12,8 @@
             "enable": true,
             "domains": [
                 "generativelanguage.googleapis.com",
-                "play.google.com"
+                "play.google.com",
+                "www.play.google.com"
             ]
         }
     }
