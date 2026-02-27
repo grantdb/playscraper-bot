@@ -69,16 +69,16 @@ async function processAppUrl(context: any, postId: string): Promise<{ success: b
 Please visit this exact URL and read the page to get the app details:
 ${playStoreLink}
 
-Use your Google Search tool to search for: "Android App Google Play Store package id: ${appId}" AND "${playStoreLink}"
+Use your Google Search tool to search for EXACTLY this query to ensure you only read the official store page: "site:play.google.com ${appId}"
 
-From the page, I need:
-- The EXACT app title as it appears on the Play Store page (not guessed from the package name)
-- The EXACT developer/publisher name shown on the page
-- The star rating
-- The download count
-- The last updated date
-- The content rating (e.g. Everyone, Teen)
-- A brief 1-2 sentence description of what the app does
+From the search results, you MUST extract:
+- The EXACT app title as it appears on the Play Store page.
+- The EXACT developer or publisher name. (Do not return "Unknown". Look hard in the search snippets for the creator's name).
+- The star rating.
+- The download count (e.g., 50M+, 1K+, or "New Release").
+- The last updated date.
+- The content rating (e.g., Everyone, Teen, PEGI 3).
+- A brief 1-2 sentence description of what the app does.
 
 Return ONLY a raw JSON object with no markdown or backticks:
 {
@@ -86,9 +86,9 @@ Return ONLY a raw JSON object with no markdown or backticks:
   "title": "exact title from page",
   "developer": "exact developer name from page",
   "rating": "e.g. 4.5 or Unrated",
-  "downloads": "e.g. 50M+ or Unknown",
-  "updated": "e.g. Jan 15, 2025 or Unknown",
-  "ageRating": "e.g. Everyone or Unknown",
+  "downloads": "e.g. 50M+",
+  "updated": "e.g. Jan 15, 2025",
+  "ageRating": "e.g. Everyone",
   "description": "1-2 sentence description, max 250 chars"
 }
 
@@ -144,6 +144,12 @@ If you cannot visit or find the page at all, return {"found": false}.`;
       // Strip any residual markdown formatting the AI might have accidentally added
       const cleanedText = aiResponseText.replace(/```json/g, '').replace(/```/g, '').trim();
       appData = JSON.parse(cleanedText);
+
+      // Explicitly handle the edge case where Gemini returns an empty object {}
+      // This happens when the search finds absolutely nothing and the model forgets the schema
+      if (Object.keys(appData).length === 0) {
+        appData = { found: false };
+      }
     } catch (parseError) {
       throw new Error(`Failed to parse Gemini response as JSON: ${aiResponseText}`);
     }
@@ -174,12 +180,8 @@ If you cannot visit or find the page at all, return {"found": false}.`;
         });
       } catch (fetchErr) {
         console.log(`Fetch to play.google.com blocked by Devvit: ${fetchErr}`);
-        if (geminiFoundNothing) {
-          console.log("Both Gemini and HTML fallback failed. Aborting silently.");
-          return { success: false, message: 'Both Gemini and HTML fallback failed (Network/Access error).' };
-        }
-        // Gemini had partial data — continue and post what we have
-        console.log("HTML blocked but Gemini has partial data — will post with that.");
+        // Mock a failed response so it falls down to the Beta Testing or Partial Data logic
+        htmlResponse = { ok: false, status: 403, text: async () => '' } as any;
       }
 
       if (htmlResponse && !htmlResponse.ok) {
@@ -192,7 +194,9 @@ If you cannot visit or find the page at all, return {"found": false}.`;
             `**Want to help test this app?**\n` +
             `You may need to opt-in as a tester to download it. You can try the standard Play Store testing opt-in link below:\n\n` +
             `👉 **[Sign up to test this app](${testingUrl})**\n\n` +
-            `*Note: App details such as developer, rating, and downloads cannot be verified for unpublished testing apps.*`;
+            `*Note: App details such as developer, rating, and downloads cannot be verified for unpublished testing apps.*\n\n` +
+            `---\n\n` +
+            `*I am a bot. If you find an error, please contact the moderators of this subreddit.*`;
           const betaComment = await context.reddit.submitComment({ id: post.id, text: betaCommentBody });
           await betaComment.distinguish(true);
           console.log(`SUCCESS: Posted beta/testing fallback comment for ${appId}.`);
@@ -344,7 +348,9 @@ If you cannot visit or find the page at all, return {"found": false}.`;
 
     const commentBody = commentLines.join('\n') +
       `\n\n**Description:**\n> ${description}\n\n` +
-      `[📲 View on Google Play](${playStoreLink})`;
+      `[📲 View on Google Play](${playStoreLink})\n\n` +
+      `---\n\n` +
+      `*I am a bot. If you find an error, please contact the moderators of this subreddit.*`;
 
     const comment = await context.reddit.submitComment({
       id: post.id,
