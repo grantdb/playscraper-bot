@@ -92,25 +92,24 @@ Your task is to find the official information for the app with package ID: "${ap
 USE YOUR SEARCH TOOL to find the current metadata for this app.
 Search query suggestions:
 1. 'site:play.google.com "${appId}"'
-2. 'site:play.google.com "${appId}" downloads content rating'
+2. 'site:play.google.com "${appId}" "downloads" "Everyone"'
 
-CRITICAL extracted data:
-- The EXACT app title.
-- Official Developer name (look for "Offered by").
-- The exact download count (e.g., "10+", "50+", "1K+"). If you see "10+ Downloads" in a snippet, return "10+".
-- The content maturity rating (e.g., "Everyone", "Teen", "Rated for 3+"). Look for the word "Everyone" or "Rated for".
-- A brief 1-2 sentence description.
+CRITICAL INSTRUCTIONS:
+- You MUST find the official Play Store title and developer.
+- Look specifically for "10+ downloads", "50+ downloads", etc. in snippets and return EXACTLY that.
+- Look for Content Rating like "Everyone", "Teen", or "PEGI 3".
+- If you find any evidence of the app, return "found": true.
 
-Return ONLY a raw JSON object:
+Return ONLY a raw JSON object (no markdown):
 {
   "found": true or false,
-  "title": "...",
-  "developer": "...",
-  "rating": "...",
-  "downloads": "...",
-  "updated": "...",
-  "ageRating": "...",
-  "description": "..."
+  "title": "required",
+  "developer": "required",
+  "rating": "optional",
+  "downloads": "required (e.g. 10+, 50+)",
+  "updated": "optional",
+  "ageRating": "required (e.g. Everyone, Teen)",
+  "description": "required"
 }
 
 If you find NO evidence of any app with this package ID, return {"found": false}.`;
@@ -157,10 +156,12 @@ If you find NO evidence of any app with this package ID, return {"found": false}
       console.log(`Gemini raw response text (first 200 chars): ${aiResponseText.substring(0, 200)}`);
 
       try {
-        const cleanedText = aiResponseText.replace(/```json/g, '').replace(/```/g, '').trim();
-        const parsed = JSON.parse(cleanedText);
-        if (Object.keys(parsed).length > 0) {
-          appData = { ...appData, ...parsed };
+        const jsonMatch = aiResponseText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          if (Object.keys(parsed).length > 2) { // Ensure it's not just {} or {found:true}
+            appData = { ...appData, ...parsed };
+          }
         }
       } catch (parseError) {
         console.log(`Failed to parse Gemini response as JSON: ${aiResponseText}`);
