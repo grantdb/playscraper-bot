@@ -95,15 +95,14 @@ Your task is to find the official information for the app with package ID: "${ap
 HINT: The app might be related to "${postTitle}". If the package ID search fails, use this title to find the listing.
 
 SEARCH STRATEGY:
-1. Search specifically for the direct Play Store URL: '${playStoreLink}'.
-2. Search for 'site:play.google.com "${appId}"'.
-3. Search for 'site:play.google.com "${appId}" "${postTitle}"' ONLY as a fallback.
+1. Search specifically for the Google Play Store page: '${playStoreLink}'.
+2. If multiple results appear, prioritize the one that matches '${appId}' exactly.
 
 CRITICAL INSTRUCTIONS:
-- You are provided with the official app URL: ${playStoreLink}. Your primary goal is to verify the contents of THIS URL using your search tools.
+- You are provided with the official app URL: ${playStoreLink}. Your task is to extract its details accurately.
 - TRANSLATION MANDATORY: All returned data MUST be in English.
-- METRIC HARVESTING: Search result snippets often contain fragments like "Contains ads", "In-app purchases", "Everyone", or "10+ downloads". You MUST extract these even if the full page doesn't load.
-- Only return "found": true if you definitively find search results for THIS EXACT app. Otherwise return {"found": false}.
+- METRIC HARVESTING: Search result snippets often contain fragments like "Contains ads", "In-app purchases", "Everyone", or "10+ downloads". You MUST extract these.
+- If you find the official page for "${appId}", return "found": true. If you are certain it does not exist, return {"found": false}.
 
 Return a raw JSON object:
 {
