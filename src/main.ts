@@ -212,13 +212,11 @@ If you find NO evidence of any app with this package ID, return {"found": false}
           // Only post Beta notice if Gemini found ABSOLUTELY nothing (no title)
           if (geminiFoundNothing && (!appData.title || appData.title === appId)) {
             console.log(`Fallback failed (HTTP ${htmlResponse.status}). Treating as potential Beta/Testing app.`);
-            const testingUrl = `https://play.google.com/apps/testing/${appId}`;
             const betaCommentBody = `### **New / Early Access App**\n\n` +
               `It looks like this app is currently a **New Release**, in **Early Access**, or its details are not yet fully indexed in our primary data sources.\n\n` +
               `**Want to try this app?**\n` +
-              `You can find it on the Google Play Store using the link below. For some testing apps, you may need to opt-in as a tester first:\n\n` +
-              `👉 **[View App on Play Store](https://play.google.com/store/apps/details?id=${appId})**\n` +
-              `👉 **[Opt-in to testing](${testingUrl})**\n\n` +
+              `You can find it on the Google Play Store using the link below:\n\n` +
+              `👉 **[View App on Play Store](https://play.google.com/store/apps/details?id=${appId})**\n\n` +
               `*Note: Detailed ratings and download statistics may be hidden for unpublished or new testing apps.*\n\n` +
               `---\n\n` +
               `*I am a bot. If you find an error, please [contact the moderators](https://www.reddit.com/message/compose?to=/r/${post.subredditName}) of this subreddit.*`;
