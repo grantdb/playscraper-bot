@@ -38,8 +38,8 @@ Created by **grantdb**. If you use this code as a baseline for your own projects
 Clone this repository to your local machine and install the required dependencies:
 
 ```bash
-git clone https://github.com/your-username/playscrapper-bot.git
-cd playscrapper-bot
+git clone https://github.com/grantdb/playscraper-bot.git
+cd playscraper-bot
 npm install
 ```
 
