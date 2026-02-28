@@ -89,15 +89,15 @@ async function processAppUrl(context: any, postId: string, force: boolean = fals
       const prompt = `You are a helpful assistant that retrieves details about Android apps from the Google Play Store.
 Your task is to find the official information for the app with package ID: "${appId}".
 
-USE YOUR SEARCH TOOL to find the current metadata for this app.
-Search query suggestions:
-1. 'site:play.google.com "${appId}"'
-2. 'site:play.google.com "${appId}" downloads content rating'
+SEARCH STRATEGY:
+1. Search for 'site:play.google.com "${appId}"'.
+2. If metrics (downloads/content rating) are missing, search for 'site:play.google.com "${appId}" "downloads" "Everyone"'.
+3. Search for the Play Store URL directly: 'https://play.google.com/store/apps/details?id=${appId}'.
 
 CRITICAL INSTRUCTIONS:
 - You MUST find the official Play Store title and developer for "${appId}".
-- Look specifically for "10+ downloads", "50+ downloads", etc. in search result snippets and return exactly that.
-- Look for Content Rating labels like "Everyone", "Teen", or "PEGI 3".
+- Look specifically for strings like "10+ downloads", "50+ downloads", or "100+ downloads" in search result snippets. Return ONLY the number and plus (e.g., "10+").
+- Look for the Content Rating text or icon description like "Everyone", "Rated for 3+", or "Teen".
 - If you find ANY evidence of the app matching this ID, return "found": true.
 
 Return a raw JSON object:
@@ -106,9 +106,9 @@ Return a raw JSON object:
   "title": "...",
   "developer": "...",
   "rating": "...",
-  "downloads": "...", (e.g. 10+, 50+, 1K+)
+  "downloads": "...",
   "updated": "...",
-  "ageRating": "...", (e.g. Everyone, Teen, PEGI 3)
+  "ageRating": "...",
   "description": "..."
 }
 
