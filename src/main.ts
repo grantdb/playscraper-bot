@@ -92,17 +92,16 @@ Your task is to find the official information for the app with package ID: "${ap
 
 HINT: The app might be related to "${postTitle}". If the package ID search fails, use this title to find the listing.
 
-SEARCH STRATEGY & STRICTNESS:
-1. Search for 'site:play.google.com "${appId}" "${postTitle}"'.
+SEARCH STRATEGY:
+1. Search specifically for the direct Play Store URL: '${playStoreLink}'.
 2. Search for 'site:play.google.com "${appId}"'.
-3. Search for the direct Play Store URL: 'https://play.google.com/store/apps/details?id=${appId}'.
-4. CRITICAL: Only return "found": true if you find a search result whose URL OR SNIPPET explicitly contains either the package ID "${appId}" OR a very strong mention of "${postTitle}" associated with a Play Store link.
-5. DO NOT mix information from different apps. Even if another app (like "Floosy") appears in the results, ONLY extract data for the EXACT target "${appId}" or its alias "${postTitle}". If neither is found, return {"found": false}.
+3. Search for 'site:play.google.com "${appId}" "${postTitle}"' ONLY as a fallback.
 
 CRITICAL INSTRUCTIONS:
+- You are provided with the official app URL: ${playStoreLink}. Your primary goal is to verify the contents of THIS URL using your search tools.
 - TRANSLATION MANDATORY: All returned data MUST be in English.
 - METRIC HARVESTING: Search result snippets often contain fragments like "Contains ads", "In-app purchases", "Everyone", or "10+ downloads". You MUST extract these even if the full page doesn't load.
-- If the search results only show OTHER apps and not the exact ID "${appId}" or the title "${postTitle}", you MUST return {"found": false}.
+- Only return "found": true if you definitively find search results for THIS EXACT app. Otherwise return {"found": false}.
 
 Return a raw JSON object:
 {
@@ -168,7 +167,12 @@ If you find NO evidence of any app with this package ID, return {"found": false}
           const parsed = JSON.parse(jsonMatch[0]);
           if (Object.keys(parsed).length > 0) {
             appData = { ...appData, ...parsed };
+          } else {
+            // If Gemini returns just {}, it means it found nothing
+            appData.found = false;
           }
+        } else {
+          appData.found = false;
         }
       } catch (parseError) {
         console.log(`Failed to parse Gemini response as JSON: ${aiResponseText}`);
