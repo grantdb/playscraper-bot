@@ -144,6 +144,7 @@ If you find NO evidence of any app with this package ID, return {"found": false}
       }
 
       const data = await response.json();
+      console.log(`Gemini Full API Response: ${JSON.stringify(data).substring(0, 500)}`);
       const parts: any[] = data.candidates?.[0]?.content?.parts ?? [];
       let aiResponseText = '{}';
       for (const part of parts) {
