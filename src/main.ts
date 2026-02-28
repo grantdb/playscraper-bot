@@ -286,13 +286,15 @@ If you find NO evidence of any app with this package ID, return {"found": false}
     const updatedOn = (appData.updated && !appData.updated.toLowerCase().includes("not") && !appData.updated.toLowerCase().includes("unknown") && appData.updated.trim() !== "") ? appData.updated : "Unknown";
 
     const ageRatingStr = appData.ageRating?.toLowerCase() || "";
-    const isGenericAge = ageRatingStr.includes("not") || ageRatingStr.includes("unknown") || ageRatingStr.trim() === "";
-    const ageRating = isGenericAge ? "Unrated" : appData.ageRating;
+    // If it's completely empty or says "not/unknown", set to Unknown so it drops cleanly.
+    // If it's a generic "Unrated" app, we can display "Unrated".
+    const isGenericAge = ageRatingStr.includes("not found") || ageRatingStr.includes("unknown") || ageRatingStr.trim() === "";
+    const ageRating = isGenericAge ? "Unknown" : (appData.ageRating || "Unknown");
 
-    // Rating cleanup: if it says "not found" etc, make it Unrated
+    // Rating cleanup: if it says "not found" etc or is empty, make it Unknown so it drops cleanly.
     let finalRating = rating;
-    if (rating.toLowerCase().includes("not found") || rating.toLowerCase().includes("unknown")) {
-      finalRating = "Unrated";
+    if (rating === "Unrated" || rating.toLowerCase().includes("not found") || rating.toLowerCase().includes("unknown") || rating.trim() === "") {
+      finalRating = "Unknown";
     }
     const description = appData.description || "No description available.";
 
@@ -303,7 +305,7 @@ If you find NO evidence of any app with this package ID, return {"found": false}
 
     const commentLines = [`### **${title}**\n`];
     if (developer !== "Unknown Developer") commentLines.push(`* **Developer:** ${developer}`);
-    if (finalRating !== "Unrated") commentLines.push(`* **Rating:** ${finalRating}`);
+    if (finalRating !== "Unknown") commentLines.push(`* **Rating:** ${finalRating}`);
     if (downloads !== "Unknown") commentLines.push(`* **Downloads:** ${downloads}`);
     if (updatedOn !== "Unknown") commentLines.push(`* **Updated:** ${updatedOn}`);
     if (ageRating !== "Unknown") commentLines.push(`* **Content Rating:** ${ageRating}`);
