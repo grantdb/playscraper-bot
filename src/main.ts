@@ -104,8 +104,10 @@ CRITICAL INSTRUCTIONS:
 
 Return a raw JSON object:
 {
+  "reasoning": "Briefly explain WHICH search result snippet confirmed this is the EXACT app '${appId}'.",
   "found": true or false,
-  "detectedPackageId": "${appId} detected from your tool result",
+  "sourceUrl": "The core Play Store URL from your search results (MUST contain 'id=${appId}')",
+  "detectedPackageId": "The ${appId} you are verifying",
   "title": "...",
   "developer": "...",
   "rating": "...",
@@ -169,12 +171,20 @@ If you find NO evidence of any app with this package ID, return {"found": false}
       } catch (parseError) {
         console.log(`Failed to parse Gemini response as JSON: ${aiResponseText}`);
       }
-      console.log(`Gemini result - found: ${appData.found}, title: ${appData.title}, developer: ${appData.developer}, detectedId: ${appData.detectedPackageId}`);
+      console.log(`Gemini result - found: ${appData.found}, title: ${appData.title}, detectedId: ${appData.detectedPackageId}, source: ${appData.sourceUrl}`);
 
-      // Hard rejection if the detected ID doesn't match the target ID (prevents hallucination/mixing)
-      if (appData.found && appData.detectedPackageId && appData.detectedPackageId !== appId) {
-        console.log(`REJECTED: Gemini found wrong package ID (${appData.detectedPackageId}) for target ${appId}`);
+      // Hard rejection if the detected ID or source URL doesn't match the target ID (prevents hallucination/lying)
+      const targetIdLower = appId.toLowerCase();
+      const detectedIdLower = (appData.detectedPackageId || "").toLowerCase();
+      const sourceUrlLower = (appData.sourceUrl || "").toLowerCase();
+
+      const idMismatch = appData.found && detectedIdLower !== targetIdLower;
+      const urlMismatch = appData.found && !sourceUrlLower.includes(`id=${targetIdLower}`);
+
+      if (idMismatch || urlMismatch) {
+        console.log(`REJECTED: Gemini found wrong app. Target: ${appId}, Found ID: ${appData.detectedPackageId}, Source URL: ${appData.sourceUrl}`);
         appData.found = false;
+        appData.title = appId; // Reset to avoid passing the title check later
       }
 
       const geminiFoundNothing = appData.found === false;
