@@ -42,9 +42,10 @@ async function processAppUrl(context: any, postId: string, force: boolean = fals
       }
     }
 
-    // 1. Strip Markdown backslashes (Reddit escapes underscores as \_ which breaks regex)
-    // 2. Decode content to handle encoded underscores (%5F) and other entities
-    let contentToSearch = (post.body ?? '').replace(/\\/g, '');
+    // 1. Combine all possible URL sources: URL, Body, and OP comments
+    // 2. Strip Markdown backslashes (Reddit escapes underscores as \_ which breaks regex)
+    // 3. Decode content to handle encoded underscores (%5F) and other entities
+    let contentToSearch = `${post.url || ''} ${post.body || ''}`.replace(/\\/g, '');
     try {
       contentToSearch = decodeURIComponent(contentToSearch);
     } catch (e) {
@@ -52,7 +53,8 @@ async function processAppUrl(context: any, postId: string, force: boolean = fals
     }
 
     // Refined regex: matches package ID segments (alphanumeric/underscore) separated by dots.
-    const playStoreRegex = /(?:id=|testing\/)([a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)+)/;
+    // Includes optional id= or testing/ or play.google.com/store/apps/details?id= or apps/details?id=
+    const playStoreRegex = /(?:id=|testing\/|details\?id=)([a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)+)/;
     let match = contentToSearch.match(playStoreRegex);
 
     // Fallback: If no link found in body/url, scan the author's comments
