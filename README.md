@@ -74,7 +74,7 @@ For security, the Gemini API key must be configured securely on a per-subreddit 
 1.  Navigate to your subreddit on the Reddit website (e.g., `https://www.reddit.com/r/TestSubreddit`).
 2.  Click on **Mod Tools** (usually found in the right sidebar or under the "About" tab on mobile).
 3.  Scroll down to the **Apps** section and click on **Installed Apps**.
-4.  Find **playscrapper-bot** and click on it.
+4.  Find **playscraper-bot** and click on it.
 5.  Enter your Google Gemini API Key in the **Google Gemini API Key** configuration field.
 6.  Click **Save**.
 
